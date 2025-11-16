@@ -8,15 +8,26 @@ class UserTest(BaseTest):
     def test_register_user(self):
         with self.client:
             with self.app_context():
-                request =client.post('/register', data={'username': 'test', 'password': "1234" })
+                response =client.post('/register', data={'username': 'test', 'password': "1234" })
 
-                self.assertEqual(request.status_code, 201)
+                self.assertEqual(response.status_code, 201)
                 self.asserIsNotNone(UserModel.find_by_username(username='test'))
                 self.assertDictEqual({'message': 'User created successfully.'},
-                                     json.loads(request.data))
+                                     json.loads(response.data))
 
     def test_login_user(self):
-        pass
+        with self.client:
+            client.post('/register', data={'username': 'test', 'password': "1234" })
+            auth_response = client.post('/auth/login',
+                                       data=json.dumps({'username': 'test', 'password': "1234" }),
+                                       headers={'Content-Type': 'application/json'})
+            self.assertIn('access_token', json.loads(auth_response.data).keys())
 
-    def test_register_deuplciate_user(self):
-        pass
+    def test_register_duplciate_user(self):
+        with self.client:
+            client.post('/register', data={'username': 'test', 'password': "1234"})
+            response = client.post('/register', data={'username': 'test', 'password': "1234" })
+
+            self.assertEqual(response.status_code, 400)
+            self.assetDictEqual({'message': 'User created successfully.'},
+                                json.loads(response.data))
