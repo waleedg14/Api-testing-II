@@ -1,11 +1,13 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
+from flask_jwt import JWT, JWTError
 from flask_restful import Api
 
 from resources.item import Item, ItemList
 from resources.store import Store, StoreList
 from resources.user import UserRegister
+from starter_code.security import authenticate, identity
 
 app = Flask(__name__)
 
@@ -14,7 +16,9 @@ app.config['DEBUG'] = True
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 api = Api(app)
+app.secret_key = 'waleed123'
 
+jwt = JWT(app, authenticate, identity)
 
 api.add_resource(Store, '/store/<string:name>')
 api.add_resource(Item, '/item/<string:name>')
@@ -22,6 +26,11 @@ api.add_resource(ItemList, '/items')
 api.add_resource(StoreList, '/stores')
 
 api.add_resource(UserRegister, '/register')
+
+
+@app.errorhandler(JWTError)
+def auth_handler(err):
+    return jsonify({'message': 'Could not authorize. Please check usrname or password.'}), 401
 
 if __name__ == '__main__':
     from db import db
